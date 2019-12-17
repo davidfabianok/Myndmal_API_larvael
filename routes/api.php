@@ -13,5 +13,5 @@ Route::group(['middleware' => ['jwt.auth']], function () {
     });
 
     // Product resource
-
+    Route::apiResource('/product', 'API\ProductController');
 });
