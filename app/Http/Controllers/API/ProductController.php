@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
@@ -105,7 +106,7 @@ class ProductController extends Controller
             'description' => 'string|nullable',
             'price' => 'numeric|required',
             'stock' => 'numeric|nullable',
-            'image' => 'string',
+            'image' => 'file',
         ]);
         if ($validator->fails()) {
             return response()->json([
@@ -117,7 +118,7 @@ class ProductController extends Controller
         try {
 
             $product = Product::find($id);
-            if($product == false){
+            if ($product == false) {
                 return response()->json([
                     'success' => false,
                     'error' => 'El producto no se encontro',
@@ -150,7 +151,7 @@ class ProductController extends Controller
         try {
 
             $product = Product::find($id);
-            if($product == false){
+            if ($product == false) {
                 return response()->json([
                     'success' => false,
                     'error' => 'El producto no se encontro',
@@ -158,7 +159,7 @@ class ProductController extends Controller
             }
 
             $product->update([
-                'state' => $product->state == 1 ? 0 : 1
+                'state' => $product->state == 1 ? 0 : 1,
             ]);
 
             return response()->json([
@@ -170,6 +171,34 @@ class ProductController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $ex->getMessage(),
+            ]);
+        }
+    }
+
+    public function storeamazon(Request $request)
+    {
+        $validator = Validator::make($request->json()->all(), [
+            'title' => 'min:5',
+            'image' => 'max:500000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'data' => $validator->errors(), 'code' => 404,
+            ]);
+        } else {
+            $filename = $request->file('image');
+            $extencion = $filename->getClientOriginalExtension();
+            $fName = $filename->getFilename() . '.' . $extencion;
+            \Storage::disk('public')->put($fName, File::get($filename), 'public');
+
+            $product = new Product;
+            $product->name = $request->name;
+            $product->filename = $fName;
+            $product->save();
+
+            return response()->json([
+                'data' => 'Insercion correcta', 'code' => 200,
             ]);
         }
     }
